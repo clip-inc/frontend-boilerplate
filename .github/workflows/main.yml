@@ -42,11 +42,33 @@ jobs:
 
   lint:
     runs-on: ${{ matrix.os }}
+
     strategy:
       matrix:
         os: [ubuntu-latest]
         node: [14]
-    needs: setup
+
     steps:
-      - name: yarn lint
-        run: yarn lint
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: checkout
+        uses: actions/checkout@master
+
+      - name: restore workspace cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            distributions/*/node_modules
+            packages/*/dist
+          key: ${{ matrix.os }}-node-v${{ matrix.node }}-nuxt-${{ github.sha }}
+
+      # - name: lint
+      #   run: yarn test:lint
+
+      # - name: test types
+      #   run: yarn test:types
+    needs: setup
