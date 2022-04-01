@@ -1,4 +1,4 @@
-## Before
+## 前提
 
 1. VSCode へ editorconfig エクステンションをインストール
 
