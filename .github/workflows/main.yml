@@ -18,6 +18,16 @@ jobs:
         id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn config get cacheFolder)"
 
+      - name: cache node_modules
+        id: node_modules_cache_id
+        uses: actions/cache@v2
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            distributions/*/node_modules
+          key: ${{ matrix.os }}-node-v${{ matrix.node }}-deps-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
+
       - name: install
         run: yarn --check-files --frozen-lockfile --non-interactive
 
@@ -39,6 +49,4 @@ jobs:
     needs: setup
     steps:
       - name: yarn lint
-        uses: nuxt/actions-yarn@node-11
-        with:
-          args: "lint"
+        run: yarn lint
