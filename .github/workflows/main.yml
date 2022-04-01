@@ -1,6 +1,6 @@
-name: Lint
-
 on: [push]
+
+name: Setup and lint
 
 jobs:
   setup:
@@ -11,64 +11,22 @@ jobs:
         node: [14]
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v2
-
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn config get cacheFolder)"
-
-      - name: cache node_modules
-        id: node_modules_cache_id
-        uses: actions/cache@v2
+      - uses: actions/checkout@v2
+      - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+      - run: yarn install --frozen-lockfile --check-files
+      - uses: actions/cache@v2
+        id: cache-build
         with:
-          path: |
-            node_modules
-            packages/*/node_modules
-            distributions/*/node_modules
-          key: ${{ matrix.os }}-node-v${{ matrix.node }}-deps-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
-
-      - name: install
-        run: yarn --check-files --frozen-lockfile --non-interactive
-
-      - name: cache workspace
-        uses: actions/cache@v3
-        id: yarn-cache
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
+          path: ./*
+          key: ${{ github.sha }}
 
   lint:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        node: [14]
-
-    steps:
-      - uses: actions/setup-node@v2
-        with:
-          node-version: ${{ matrix.node }}
-
-      - name: checkout
-        uses: actions/checkout@master
-
-      - name: restore workspace cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            node_modules
-            packages/*/node_modules
-            distributions/*/node_modules
-            packages/*/dist
-          key: ${{ matrix.os }}-node-v${{ matrix.node }}-nuxt-${{ github.sha }}
-
-      # - name: lint
-      #   run: yarn test:lint
-
-      # - name: test types
-      #   run: yarn test:types
+    runs-on: ubuntu-latest
     needs: setup
+    steps:
+      - uses: actions/cache@v2
+        id: restore-build
+        with:
+          path: ./*
+          key: ${{ github.sha }}
+      - run: yarn lint
